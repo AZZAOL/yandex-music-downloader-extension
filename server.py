@@ -4,77 +4,13 @@ from yandex_music import Client
 import logging
 import requests
 import io
-import json
-from time import sleep
-from selenium import webdriver
-from selenium.webdriver.remote.command import Command
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
 
 app = Flask(__name__)
 CORS(app, expose_headers=['Content-Disposition'])
 
 logging.basicConfig(level=logging.INFO)
 
-# Функция для проверки активности драйвера
-def is_active(driver):
-    try:
-        driver.execute(Command.GET_ALL_COOKIES)
-        return True
-    except Exception:
-        return False
-
-# Функция для получения токена через Selenium
-def get_token():
-    try:
-        # Настройка Chrome для логирования запросов
-        chrome_options = Options()
-        chrome_options.add_experimental_option('perfLoggingPrefs', {
-            'enableNetwork': True,
-            'enablePage': True
-        })
-        chrome_options.set_capability('goog:loggingPrefs', {'performance': 'ALL'})
-
-        # Используем Service для ChromeDriver
-        service = Service(ChromeDriverManager().install())
-        driver = webdriver.Chrome(service=service, options=chrome_options)
-        
-        # Открываем страницу авторизации Яндекса
-        driver.get("https://oauth.yandex.ru/authorize?response_type=token&client_id=23cabbbdc6cd418abb4b39c32c41195d")
-
-        token = None
-        while token is None and is_active(driver):
-            sleep(1)
-            try:
-                logs_raw = driver.get_log("performance")
-                for lr in logs_raw:
-                    log = json.loads(lr["message"])["message"]
-                    url_fragment = log.get('params', {}).get('frame', {}).get('urlFragment')
-                    if url_fragment:
-                        token = url_fragment.split('&')[0].split('=')[1]
-            except Exception as e:
-                logging.error(f"Ошибка при получении логов: {str(e)}")
-
-        driver.quit()  # Полное закрытие браузера
-        if token:
-            return token
-        else:
-            raise Exception("Не удалось получить токен")
-    except Exception as e:
-        logging.error(f"Ошибка в get_token: {str(e)}")
-        raise e
-
-# Эндпоинт для получения токена
-@app.route('/get_token', methods=['GET'])
-def serve_token():
-    try:
-        token = get_token()
-        return jsonify({"token": token}), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-# Существующие маршруты
+# Маршрут для получения информации о треке
 @app.route('/get_track_info', methods=['POST'])
 def get_track_info():
     try:
@@ -153,6 +89,7 @@ def get_track_info():
         logging.error(f'Ошибка: {str(e)}')
         return jsonify({'error': str(e)}), 500
 
+# Маршрут для скачивания трека
 @app.route('/download_track', methods=['POST'])
 def download_track():
     try:
