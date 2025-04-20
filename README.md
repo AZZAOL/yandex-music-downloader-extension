@@ -93,6 +93,7 @@
 
 *Скриншоты*:
 
-![image](https://github.com/user-attachments/assets/a4f53d95-16c0-4b42-920b-cacfb6bdda6b)
+![image](https://github.com/user-attachments/assets/bc2541a8-149e-4ee7-8961-1a795e867420)
 
-![image](https://github.com/user-attachments/assets/8ad86501-9b00-470d-a4e3-7d5b56f71131)
+![image](https://github.com/user-attachments/assets/6daeb1f4-c42f-494f-967f-8c9094ca0e09)
+
