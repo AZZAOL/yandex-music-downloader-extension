@@ -23,6 +23,7 @@
 ![image](https://github.com/user-attachments/assets/bc2541a8-149e-4ee7-8961-1a795e867420)
 
 ## Требования
+- Желательно Google Chrome, тестировалось именно на нём
 - Python 3.8+ для запуска локального сервера.
 - Установленные зависимости Python (см. `requirements.txt`):
   - `flask`
