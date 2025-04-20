@@ -24,7 +24,6 @@
 ![image](https://github.com/user-attachments/assets/bc2541a8-149e-4ee7-8961-1a795e867420)
 
 ## Требования
-- Браузер на базе Chromium (Google Chrome, Microsoft Edge, Opera и т.д.).
 - Python 3.8+ для запуска локального сервера.
 - Установленные зависимости Python (см. `requirements.txt`):
   - `flask`
