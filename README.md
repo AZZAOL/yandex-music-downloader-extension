@@ -15,9 +15,13 @@
 - [Контакты](#контакты)
 
 ## Возможности
-- Добавляет кнопку скачивания рядом с каждым треком на сайте Яндекс.Музыки.
 - Работает с локальным сервером (Python Flask) для обработки запросов и скачивания треков.
+- Добавляет кнопку скачивания рядом с каждым треком на сайте Яндекс.Музыки.
+
+![image](https://github.com/user-attachments/assets/6daeb1f4-c42f-494f-967f-8c9094ca0e09)
 - Требует токен Яндекс.Музыки, который можно получить через интерфейс расширения.
+
+![image](https://github.com/user-attachments/assets/bc2541a8-149e-4ee7-8961-1a795e867420)
 
 ## Требования
 - Браузер на базе Chromium (Google Chrome, Microsoft Edge, Opera и т.д.).
@@ -86,12 +90,3 @@
 
 ## Контакты
 Если у вас есть вопросы, предложения или вы нашли ошибку, создайте [issue](https://github.com/AZZAOL/yandex-music-downloader-extension/issues) в репозитории или свяжитесь с автором через GitHub.
-
----
-
-*Скриншоты*:
-
-![image](https://github.com/user-attachments/assets/bc2541a8-149e-4ee7-8961-1a795e867420)
-
-![image](https://github.com/user-attachments/assets/6daeb1f4-c42f-494f-967f-8c9094ca0e09)
-
