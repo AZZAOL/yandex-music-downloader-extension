@@ -5,13 +5,16 @@
   "description": "Добавляет кнопку загрузки для треков на Яндекс.Музыке",
   "permissions": [
     "activeTab",
-    "storage"
+    "storage",
+    "tabs",
+    "webRequest"
   ],
   "background": {
-  "service_worker": "background.js"
+    "service_worker": "background.js"
   },
   "host_permissions": [
-    "http://localhost:5000/*"
+    "http://localhost:5000/*",
+    "https://*.yandex.ru/*"
   ],
   "content_scripts": [
     {
