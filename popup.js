@@ -2,53 +2,59 @@ document.addEventListener('DOMContentLoaded', () => {
   const tokenInput = document.getElementById('tokenInput');
   const getTokenButton = document.getElementById('getTokenButton');
   const keyIcon = document.querySelector('.input-container i');
+  
+  if (!tokenInput || !getTokenButton || !keyIcon) {
+    console.error('Не удалось найти один или несколько элементов DOM.');
+    return;
+  }
 
-  // Функция для блокировки UI
-  function lockUI() {
-    tokenInput.disabled = true;
-    keyIcon.style.pointerEvents = 'auto'; // Включаем кликабельность иконки
+  function lockGetTokenButton() {
     getTokenButton.disabled = true;
     getTokenButton.classList.add('disabled');
-    tokenInput.style.backgroundColor = '#333';
   }
 
-  // Функция для обновления UI с токеном
+  function unlockGetTokenButton() {
+    getTokenButton.disabled = false;
+    getTokenButton.classList.remove('disabled');
+  }
+
   function updateUI(token) {
     tokenInput.value = token;
-    lockUI();
+    lockGetTokenButton();
   }
 
-  // Загружаем сохранённый токен
   chrome.storage.local.get(['yandexMusicToken'], (result) => {
+    if (chrome.runtime.lastError) {
+      console.error('Ошибка при загрузке токена из хранилища:', chrome.runtime.lastError);
+      return;
+    }
     if (result.yandexMusicToken) {
       updateUI(result.yandexMusicToken);
+    } else {
+      unlockGetTokenButton();
     }
   });
 
-  // Обработчик кнопки "Получить токен"
-  if (getTokenButton) {
-    getTokenButton.addEventListener('click', () => {
-      chrome.runtime.sendMessage({ action: 'fetchToken' }, (response) => {
-        if (chrome.runtime.lastError) {
-          console.error('Ошибка при отправке сообщения:', chrome.runtime.lastError);
-          alert('Ошибка: ' + chrome.runtime.lastError.message);
-        } else if (response.success) {
-          updateUI(response.token);
-        } else {
-          alert('Ошибка: ' + response.error);
-        }
-      });
+  getTokenButton.addEventListener('click', () => {
+    lockGetTokenButton();
+    chrome.runtime.sendMessage({ action: 'openAuthPage' }, (response) => {
+      if (chrome.runtime.lastError) {
+        console.error('Ошибка при отправке сообщения:', chrome.runtime.lastError);
+        alert('Ошибка: ' + chrome.runtime.lastError.message);
+        unlockGetTokenButton();
+      }
     });
-  }
+  });
 
-  // Слушаем обновления токена
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'tokenUpdated' && request.token) {
       updateUI(request.token);
+    } else if (request.action === 'authFailed') {
+      unlockGetTokenButton();
+      alert('Не удалось получить токен. Попробуйте снова.');
     }
   });
 
-  // Обработчик для иконки ключа
   keyIcon.addEventListener('click', () => {
     if (tokenInput.type === 'password') {
       tokenInput.type = 'text';
