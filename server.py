@@ -4,6 +4,7 @@ from yandex_music import Client
 import logging
 import requests
 import io
+import re
 
 app = Flask(__name__)
 CORS(app, expose_headers=['Content-Disposition'])
@@ -31,13 +32,12 @@ def get_track_info():
 
         # Собираем доступные битрейты (только mp3)
         available_formats = {}
-        preferred_bitrates = [320, 192, 128]  # Приоритет качества
+        preferred_bitrates = [320, 192, 128]
         for info in download_info:
             if info.codec == 'mp3' and info.bitrate_in_kbps in preferred_bitrates:
                 try:
                     direct_link = info.get_direct_link()
                     if direct_link:
-                        # Проверяем, что ссылка рабочая
                         response = requests.head(direct_link, headers={
                             'User-Agent': 'Mozilla/5.0'
                         }, allow_redirects=True)
@@ -54,36 +54,70 @@ def get_track_info():
         if not available_formats:
             return jsonify({'error': 'Нет доступных mp3 форматов для этого трека'}), 404
 
-        # Выбираем основной битрейт (первый доступный из preferred_bitrates)
         selected_bitrate = next((bitrate for bitrate in preferred_bitrates if bitrate in available_formats), None)
         if not selected_bitrate:
             return jsonify({'error': 'Нет доступных mp3 форматов в указанных битрейтах'}), 404
 
         # Формируем имя файла
-        artist = track.artists[0].name if track.artists else "Неизвестный исполнитель"
+        # Собираем всех исполнителей, сохраняя порядок
+        artists = []
+        seen_artists = set()  # Для отслеживания дубликатов
+        # Сначала добавляем основных исполнителей
+        for artist in track.artists if track.artists else []:
+            if artist.name not in seen_artists:
+                artists.append(artist.name)
+                seen_artists.add(artist.name)
+        # Затем добавляем featured artists, если они есть
+        featured_artists = getattr(track, 'featured_artists', [])
+        for artist in featured_artists:
+            if artist.name not in seen_artists:
+                artists.append(artist.name)
+                seen_artists.add(artist.name)
+        # Если нет исполнителей, используем значение по умолчанию
+        if not artists:
+            artists = ["Неизвестный исполнитель"]
+        artist_str = ", ".join(artists)
         title = track.title
-        base_filename = f"{artist} - {title}"
-        base_filename = ''.join(c for c in base_filename if c not in '<>:"/\\|?*')
-        main_filename = f"{base_filename}.mp3"
 
-        # Формируем объект urls с именами файлов для каждого битрейта
-        urls = {
-            str(bitrate): available_formats[bitrate]
-            for bitrate in available_formats
-        }
-        filenames = {
-            str(bitrate): f"{base_filename}_{bitrate}kbps.mp3"
-            for bitrate in available_formats
-        }
+        # Проверяем наличие ремикса или других меток
+        version = getattr(track, 'version', None)
+        subtitle = getattr(track, 'subtitle', None)
+        logging.info(f"Track ID: {track_id}, Title: {title}, Version: {version}, Subtitle: {subtitle}, Artists: {artists}, Featured Artists: {[artist.name for artist in featured_artists] if featured_artists else []}")
+
+        # Формируем заголовок с учётом ремикса и других меток
+        title_suffixes = []
+        if version:
+            version_lower = version.lower()
+            if any(keyword in version_lower for keyword in ['remix', 'slowed', 'sped up', 'hardstyle', 'mix']):
+                title_suffixes.append(version)
+        if subtitle:
+            subtitle_lower = subtitle.lower()
+            if any(keyword in subtitle_lower for keyword in ['remix', 'slowed', 'sped up', 'hardstyle', 'mix']):
+                title_suffixes.append(subtitle)
+        # Добавляем суффиксы, если они не дублируют содержимое title
+        if title_suffixes and not any(keyword in title.lower() for keyword in title_suffixes):
+            title = f"{title} ({', '.join(set(title_suffixes))})"
+
+        base_filename = f"{artist_str} - {title}"
+        base_filename = re.sub(r'[<>:"/\\|?*]', '', base_filename)
+        base_filename = re.sub(r'\s+', ' ', base_filename).strip()
+        main_filename = f"{base_filename}.mp3"
+        logging.info(f"Сформированное имя файла: {main_filename}")
+
+        urls = {str(bitrate): available_formats[bitrate] for bitrate in available_formats}
+        filenames = {str(bitrate): f"{base_filename}_{bitrate}kbps.mp3" for bitrate in available_formats}
 
         response_data = {
-            'url': available_formats[selected_bitrate],  # Основной URL (для обратной совместимости)
-            'filename': main_filename,                  # Основное имя файла
-            'urls': urls,                              # Все доступные URL
-            'filenames': filenames                     # Имена файлов для каждого битрейта
+            'url': available_formats[selected_bitrate],
+            'filename': main_filename,
+            'urls': urls,
+            'filenames': filenames
         }
 
-        return jsonify(response_data), 200, {'Content-Type': 'application/json; charset=utf-8'}
+        return jsonify(response_data), 200, {
+            'Content-Type': 'application/json; charset=utf-8',
+            'Cache-Control': 'no-cache, no-store, must-revalidate'
+        }
 
     except Exception as e:
         logging.error(f'Ошибка: {str(e)}')
