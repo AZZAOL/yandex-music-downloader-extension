@@ -59,44 +59,18 @@ def get_track_info():
             return jsonify({'error': 'Нет доступных mp3 форматов в указанных битрейтах'}), 404
 
         # Формируем имя файла
-        # Собираем всех исполнителей, сохраняя порядок
-        artists = []
-        seen_artists = set()  # Для отслеживания дубликатов
-        # Сначала добавляем основных исполнителей
-        for artist in track.artists if track.artists else []:
-            if artist.name not in seen_artists:
-                artists.append(artist.name)
-                seen_artists.add(artist.name)
-        # Затем добавляем featured artists, если они есть
-        featured_artists = getattr(track, 'featured_artists', [])
-        for artist in featured_artists:
-            if artist.name not in seen_artists:
-                artists.append(artist.name)
-                seen_artists.add(artist.name)
-        # Если нет исполнителей, используем значение по умолчанию
-        if not artists:
-            artists = ["Неизвестный исполнитель"]
+        # Собираем всех исполнителей
+        artists = [artist.name for artist in track.artists] if track.artists else ["Неизвестный исполнитель"]
         artist_str = ", ".join(artists)
         title = track.title
 
-        # Проверяем наличие ремикса или других меток
+        # Проверяем наличие версии
         version = getattr(track, 'version', None)
-        subtitle = getattr(track, 'subtitle', None)
-        logging.info(f"Track ID: {track_id}, Title: {title}, Version: {version}, Subtitle: {subtitle}, Artists: {artists}, Featured Artists: {[artist.name for artist in featured_artists] if featured_artists else []}")
+        logging.info(f"Track ID: {track_id}, Title: {title}, Version: {version}, Artists: {artists}")
 
-        # Формируем заголовок с учётом ремикса и других меток
-        title_suffixes = []
-        if version:
-            version_lower = version.lower()
-            if any(keyword in version_lower for keyword in ['remix', 'slowed', 'sped up', 'hardstyle', 'mix']):
-                title_suffixes.append(version)
-        if subtitle:
-            subtitle_lower = subtitle.lower()
-            if any(keyword in subtitle_lower for keyword in ['remix', 'slowed', 'sped up', 'hardstyle', 'mix']):
-                title_suffixes.append(subtitle)
-        # Добавляем суффиксы, если они не дублируют содержимое title
-        if title_suffixes and not any(keyword in title.lower() for keyword in title_suffixes):
-            title = f"{title} ({', '.join(set(title_suffixes))})"
+        # Формируем заголовок с учётом version
+        if version and version.lower() not in title.lower():
+            title = f"{title} {version}"
 
         base_filename = f"{artist_str} - {title}"
         base_filename = re.sub(r'[<>:"/\\|?*]', '', base_filename)
