@@ -13,12 +13,20 @@
     "service_worker": "background.js"
   },
   "host_permissions": [
-    "http://localhost:5000/*",
-    "https://*.yandex.ru/*"
+  "http://localhost:5000/*",
+  "https://*.yandex.ru/*",
+  "https://*.yandex.kz/*",
+  "https://*.yandex.by/*",
+  "https://*.yandex.uz/*"
   ],
   "content_scripts": [
     {
-      "matches": ["*://music.yandex.kz/*", "*://music.yandex.ru/*"],
+      "matches": [
+        "*://music.yandex.ru/*",
+        "*://music.yandex.kz/*",
+        "*://music.yandex.by/*",
+        "*://music.yandex.uz/*"
+      ],
       "js": ["content.js"]
     }
   ],
